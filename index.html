@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Alchemist</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">A</span>
+          <div>
+            <p class="eyebrow">AI Project Manager</p>
+            <h1>Project Alchemist</h1>
+          </div>
+        </div>
+        <div class="status-row">
+          <span id="connectionStatus" class="status-pill">Demo mode</span>
+          <button id="reloadProjectsBtn" class="icon-button" type="button" title="Оновити проєкти" aria-label="Оновити проєкти">
+            ↻
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="studio-panel composer-panel" aria-labelledby="composerTitle">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Idea Intake</p>
+              <h2 id="composerTitle">Опиши свою ідею</h2>
+            </div>
+            <span class="panel-badge">AI Studio</span>
+          </div>
+
+          <form id="ideaForm" class="idea-form">
+            <label for="ideaInput">Ідея проєкту</label>
+            <textarea id="ideaInput" required minlength="8" placeholder="Наприклад: Створити AI агента для продажів"></textarea>
+            <div class="form-actions">
+              <button class="primary-button" type="submit">
+                <span>Аналізувати</span>
+              </button>
+              <button id="sampleBtn" class="secondary-button" type="button">Вставити приклад</button>
+            </div>
+          </form>
+
+          <div id="analysisState" class="analysis-state" hidden>
+            <span class="spinner"></span>
+            <p>Алхімія триває: аналізую ідею, формую ТЗ, roadmap і backlog.</p>
+          </div>
+
+          <article id="resultPanel" class="result-panel empty-state">
+            <h3>Готовий результат з’явиться тут</h3>
+            <p>Після аналізу додаток створить summary, business goal, target audience, features, risks, monetization, ТЗ, roadmap, задачі, архітектуру, ER-модель, tech stack і difficulty score.</p>
+          </article>
+        </section>
+
+        <aside class="dashboard-panel" aria-labelledby="dashboardTitle">
+          <section class="studio-panel">
+            <div class="panel-heading compact">
+              <div>
+                <p class="eyebrow">Dashboard</p>
+                <h2 id="dashboardTitle">Усі проєкти</h2>
+              </div>
+              <span id="projectCount" class="counter">0</span>
+            </div>
+
+            <div class="search-row">
+              <label for="searchInput">Пошук</label>
+              <input id="searchInput" type="search" placeholder="Назва, стек або статус">
+            </div>
+
+            <div class="dashboard-stats" aria-label="Статистика проєктів">
+              <div>
+                <span id="avgDifficulty">0</span>
+                <p>Середня складність</p>
+              </div>
+              <div>
+                <span id="activeProjects">0</span>
+                <p>Активні</p>
+              </div>
+            </div>
+
+            <div id="projectsList" class="projects-list"></div>
+          </section>
+
+          <section class="studio-panel export-panel">
+            <div class="panel-heading compact">
+              <div>
+                <p class="eyebrow">Export</p>
+                <h2>Експорт</h2>
+              </div>
+            </div>
+            <div class="export-actions">
+              <button id="exportJsonBtn" class="secondary-button" type="button" disabled>JSON</button>
+              <button id="exportMarkdownBtn" class="secondary-button" type="button" disabled>Markdown</button>
+            </div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <template id="sectionTemplate">
+      <section class="result-section">
+        <h3></h3>
+        <div class="section-body"></div>
+      </section>
+    </template>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
