@@ -8,6 +8,8 @@
     isSaving: false
   };
 
+  ensureGeminiKeyPanel();
+
   const el = {
     form: document.getElementById("ideaForm"),
     ideaInput: document.getElementById("ideaInput"),
@@ -54,6 +56,32 @@
     el.geminiKeyInput.addEventListener("input", () => {
       el.geminiKeyHint.textContent = "Натисніть “Зберегти ключ”, щоб використовувати Gemini.";
     });
+  }
+
+  function ensureGeminiKeyPanel() {
+    if (document.getElementById("geminiKeyInput")) return;
+    const form = document.getElementById("ideaForm");
+    if (!form) return;
+
+    const panel = document.createElement("section");
+    panel.className = "key-panel";
+    panel.setAttribute("aria-labelledby", "geminiKeyTitle");
+    panel.innerHTML = `
+      <div>
+        <p class="eyebrow">Gemini API</p>
+        <h3 id="geminiKeyTitle">Ключ для AI аналізу</h3>
+        <p id="geminiKeyHint">Вставте ключ один раз. Він збережеться тільки у цьому браузері.</p>
+      </div>
+      <div class="key-controls">
+        <label for="geminiKeyInput">Gemini API key</label>
+        <input id="geminiKeyInput" type="password" autocomplete="off" placeholder="Вставте Gemini API key">
+        <div class="form-actions">
+          <button id="saveGeminiKeyBtn" class="secondary-button" type="button">Зберегти ключ</button>
+          <button id="clearGeminiKeyBtn" class="secondary-button" type="button">Очистити</button>
+        </div>
+      </div>
+    `;
+    form.insertAdjacentElement("afterend", panel);
   }
 
   function setConnectionStatus() {
