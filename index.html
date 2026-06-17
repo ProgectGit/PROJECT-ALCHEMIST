@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260617-2">
   </head>
   <body>
     <div class="app-shell">
@@ -47,6 +47,22 @@
               <button id="sampleBtn" class="secondary-button" type="button">Вставити приклад</button>
             </div>
           </form>
+
+          <section class="key-panel" aria-labelledby="geminiKeyTitle">
+            <div>
+              <p class="eyebrow">Gemini API</p>
+              <h3 id="geminiKeyTitle">Ключ для AI аналізу</h3>
+              <p id="geminiKeyHint">Вставте ключ один раз. Він збережеться тільки у цьому браузері.</p>
+            </div>
+            <div class="key-controls">
+              <label for="geminiKeyInput">Gemini API key</label>
+              <input id="geminiKeyInput" type="password" autocomplete="off" placeholder="Вставте Gemini API key">
+              <div class="form-actions">
+                <button id="saveGeminiKeyBtn" class="secondary-button" type="button">Зберегти ключ</button>
+                <button id="clearGeminiKeyBtn" class="secondary-button" type="button">Очистити</button>
+              </div>
+            </div>
+          </section>
 
           <div id="analysisState" class="analysis-state" hidden>
             <span class="spinner"></span>
@@ -111,7 +127,7 @@
       </section>
     </template>
 
-    <script src="config.js"></script>
-    <script src="app.js"></script>
+    <script src="config.js?v=20260617-2"></script>
+    <script src="app.js?v=20260617-2"></script>
   </body>
 </html>

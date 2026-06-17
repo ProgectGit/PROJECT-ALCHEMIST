@@ -22,7 +22,11 @@
     connectionStatus: document.getElementById("connectionStatus"),
     reloadProjectsBtn: document.getElementById("reloadProjectsBtn"),
     exportJsonBtn: document.getElementById("exportJsonBtn"),
-    exportMarkdownBtn: document.getElementById("exportMarkdownBtn")
+    exportMarkdownBtn: document.getElementById("exportMarkdownBtn"),
+    geminiKeyInput: document.getElementById("geminiKeyInput"),
+    saveGeminiKeyBtn: document.getElementById("saveGeminiKeyBtn"),
+    clearGeminiKeyBtn: document.getElementById("clearGeminiKeyBtn"),
+    geminiKeyHint: document.getElementById("geminiKeyHint")
   };
 
   const SAMPLE_IDEA = "Створити медичного Telegram-бота, який відповідає на часті питання пацієнтів, записує на консультації та нагадує про прийом ліків.";
@@ -45,12 +49,24 @@
     el.reloadProjectsBtn.addEventListener("click", loadProjects);
     el.exportJsonBtn.addEventListener("click", () => exportProject("json"));
     el.exportMarkdownBtn.addEventListener("click", () => exportProject("markdown"));
+    el.saveGeminiKeyBtn.addEventListener("click", saveGeminiKeyFromInput);
+    el.clearGeminiKeyBtn.addEventListener("click", clearGeminiKey);
+    el.geminiKeyInput.addEventListener("input", () => {
+      el.geminiKeyHint.textContent = "Натисніть “Зберегти ключ”, щоб використовувати Gemini.";
+    });
   }
 
   function setConnectionStatus() {
     const hasSupabase = Boolean(config.supabaseRestUrl && config.supabaseAnonKey);
     const aiMode = config.aiProvider === "demo" ? "Demo AI" : config.aiProvider || "Demo AI";
+    const geminiReady = config.aiProvider !== "gemini" || Boolean(getStoredGeminiApiKey());
     el.connectionStatus.textContent = hasSupabase ? `Supabase + ${aiMode}` : `${aiMode}, local storage`;
+    if (config.aiProvider === "gemini") {
+      el.connectionStatus.textContent += geminiReady ? " ready" : " key needed";
+      el.geminiKeyHint.textContent = geminiReady
+        ? "Gemini key збережено у цьому браузері."
+        : "Вставте Gemini key перед аналізом або додаток використає demo AI.";
+    }
   }
 
   async function handleAnalyze(event) {
@@ -120,7 +136,8 @@
   async function requestGemini(idea) {
     const apiKey = getGeminiApiKey();
     if (!apiKey) {
-      showToast("Gemini key не заданий. Використовую demo AI.");
+      el.geminiKeyInput.focus();
+      showToast("Вставте Gemini key у поле під ідеєю. Поки використовую demo AI.");
       return demoAnalyze(idea);
     }
 
@@ -149,13 +166,33 @@
 
   function getGeminiApiKey() {
     if (config.geminiApiKey) return config.geminiApiKey;
+    return getStoredGeminiApiKey();
+  }
+
+  function getStoredGeminiApiKey() {
     const storageName = config.geminiApiKeyStorageName || "project-alchemist-gemini-key";
-    const savedKey = localStorage.getItem(storageName);
-    if (savedKey) return savedKey;
-    const enteredKey = window.prompt("Введіть Gemini API key для цього браузера:");
-    if (!enteredKey) return "";
-    localStorage.setItem(storageName, enteredKey.trim());
-    return enteredKey.trim();
+    return localStorage.getItem(storageName) || "";
+  }
+
+  function saveGeminiKeyFromInput() {
+    const key = el.geminiKeyInput.value.trim();
+    if (!key) {
+      showToast("Поле Gemini key порожнє.");
+      return;
+    }
+    const storageName = config.geminiApiKeyStorageName || "project-alchemist-gemini-key";
+    localStorage.setItem(storageName, key);
+    el.geminiKeyInput.value = "";
+    setConnectionStatus();
+    showToast("Gemini key збережено у цьому браузері.");
+  }
+
+  function clearGeminiKey() {
+    const storageName = config.geminiApiKeyStorageName || "project-alchemist-gemini-key";
+    localStorage.removeItem(storageName);
+    el.geminiKeyInput.value = "";
+    setConnectionStatus();
+    showToast("Gemini key очищено.");
   }
 
   function getAiSystemPrompt() {
