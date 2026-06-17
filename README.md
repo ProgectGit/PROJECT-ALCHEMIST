@@ -101,6 +101,8 @@ geminiModel: "gemini-1.5-flash"
 
 Again, do not commit a real Gemini key to a public repository.
 
+For GitHub Pages, keep `geminiApiKey` empty. The app will ask for the key in the browser and store it only in that browser's `localStorage`.
+
 ## GitHub Pages Deployment
 
 1. Push these files to the repository root.

@@ -5,9 +5,10 @@ window.PROJECT_ALCHEMIST_CONFIG = {
 
   // Use "demo", "openai", or "gemini".
   // Keep browser API keys empty for public GitHub Pages deployments unless you accept that visitors can see them.
-  aiProvider: "demo",
+  aiProvider: "gemini",
   openAiApiKey: "",
   openAiModel: "gpt-4.1-mini",
   geminiApiKey: "",
+  geminiApiKeyStorageName: "project-alchemist-gemini-key",
   geminiModel: "gemini-1.5-flash"
 };

@@ -89,7 +89,7 @@
     if (config.aiProvider === "openai" && config.openAiApiKey) {
       return requestOpenAi(idea);
     }
-    if (config.aiProvider === "gemini" && config.geminiApiKey) {
+    if (config.aiProvider === "gemini") {
       return requestGemini(idea);
     }
     return demoAnalyze(idea);
@@ -118,7 +118,13 @@
   }
 
   async function requestGemini(idea) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${config.geminiModel || "gemini-1.5-flash"}:generateContent?key=${config.geminiApiKey}`;
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
+      showToast("Gemini key не заданий. Використовую demo AI.");
+      return demoAnalyze(idea);
+    }
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${config.geminiModel || "gemini-1.5-flash"}:generateContent?key=${apiKey}`;
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -139,6 +145,17 @@
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     return normalizeAiPayload(JSON.parse(text), idea);
+  }
+
+  function getGeminiApiKey() {
+    if (config.geminiApiKey) return config.geminiApiKey;
+    const storageName = config.geminiApiKeyStorageName || "project-alchemist-gemini-key";
+    const savedKey = localStorage.getItem(storageName);
+    if (savedKey) return savedKey;
+    const enteredKey = window.prompt("Введіть Gemini API key для цього браузера:");
+    if (!enteredKey) return "";
+    localStorage.setItem(storageName, enteredKey.trim());
+    return enteredKey.trim();
   }
 
   function getAiSystemPrompt() {
