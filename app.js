@@ -5,7 +5,8 @@
   const state = {
     projects: [],
     selectedProject: null,
-    isSaving: false
+    isSaving: false,
+    supabaseAvailable: true
   };
 
   ensureGeminiKeyPanel();
@@ -169,7 +170,22 @@
       return demoAnalyze(idea);
     }
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${config.geminiModel || "gemini-1.5-flash"}:generateContent?key=${apiKey}`;
+    const models = getGeminiModels();
+    let lastError = null;
+    for (const model of models) {
+      try {
+        return await requestGeminiModel(idea, apiKey, model);
+      } catch (error) {
+        lastError = error;
+        if (!isGeminiModelNotFound(error)) break;
+      }
+    }
+
+    throw lastError || new Error("Gemini API повернув помилку.");
+  }
+
+  async function requestGeminiModel(idea, apiKey, model) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -186,10 +202,52 @@
         }
       })
     });
-    if (!response.ok) throw new Error("Gemini API повернув помилку.");
+    if (!response.ok) {
+      const text = await response.text();
+      const error = new Error(formatGeminiError(response.status, model, text));
+      error.status = response.status;
+      error.model = model;
+      error.details = text;
+      throw error;
+    }
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return normalizeAiPayload(JSON.parse(text), idea);
+    if (!text) throw new Error("Gemini не повернув текст відповіді.");
+    return normalizeAiPayload(parseJsonText(text), idea);
+  }
+
+  function getGeminiModels() {
+    return [
+      config.geminiModel,
+      ...(config.geminiModelFallbacks || [])
+    ].filter(Boolean).filter((model, index, models) => models.indexOf(model) === index);
+  }
+
+  function isGeminiModelNotFound(error) {
+    return error?.status === 404 && /model|not found|not supported/i.test(error.details || error.message || "");
+  }
+
+  function formatGeminiError(status, model, text) {
+    let message = text;
+    try {
+      message = JSON.parse(text)?.error?.message || text;
+    } catch {
+      message = text;
+    }
+    if (status === 400 || status === 403 || status === 404) {
+      return `Gemini API ${status} для моделі ${model}: ${message}`;
+    }
+    return `Gemini API ${status}: ${message}`;
+  }
+
+  function parseJsonText(text) {
+    const cleaned = String(text)
+      .trim()
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```$/i, "")
+      .trim();
+    return JSON.parse(cleaned);
   }
 
   function getGeminiApiKey() {
@@ -357,7 +415,7 @@
   }
 
   async function persistProject(project) {
-    if (!config.supabaseRestUrl || !config.supabaseAnonKey) return null;
+    if (!config.supabaseRestUrl || !config.supabaseAnonKey || !state.supabaseAvailable) return null;
     state.isSaving = true;
     try {
       const saved = await supabaseInsert("projects", {
@@ -419,6 +477,7 @@
       return { ...project, id: projectId, created_at: saved.created_at };
     } catch (error) {
       console.warn("Supabase save failed, using local storage.", error);
+      if (isSupabaseTableMissing(error)) state.supabaseAvailable = false;
       showToast("Supabase недоступний. Зберігаю локально.");
       return null;
     } finally {
@@ -441,7 +500,7 @@
   }
 
   async function loadProjects() {
-    if (!config.supabaseRestUrl || !config.supabaseAnonKey) {
+    if (!config.supabaseRestUrl || !config.supabaseAnonKey || !state.supabaseAvailable) {
       state.projects = getLocalProjects();
       renderProjects();
       return;
@@ -451,11 +510,21 @@
       const response = await fetch(`${trimSlash(config.supabaseRestUrl)}/projects?select=*&order=created_at.desc`, {
         headers: supabaseHeaders()
       });
-      if (!response.ok) throw new Error("Не вдалося прочитати Supabase.");
+      if (!response.ok) {
+        const text = await response.text();
+        const error = new Error(`Supabase read failed: ${text}`);
+        error.status = response.status;
+        error.details = text;
+        throw error;
+      }
       const rows = await response.json();
       state.projects = rows.map(fromProjectRow);
     } catch (error) {
       console.warn(error);
+      if (isSupabaseTableMissing(error)) {
+        state.supabaseAvailable = false;
+        showToast("Таблиці Supabase ще не створені. Працюю локально.");
+      }
       state.projects = getLocalProjects();
     }
     renderProjects();
@@ -657,6 +726,10 @@
       throw new Error(`Supabase select failed: ${text}`);
     }
     return response.json();
+  }
+
+  function isSupabaseTableMissing(error) {
+    return error?.status === 404 || /PGRST205|Could not find the table|not found/i.test(error?.details || error?.message || "");
   }
 
   function hasFullProjectData(project) {

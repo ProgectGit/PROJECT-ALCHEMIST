@@ -10,5 +10,6 @@ window.PROJECT_ALCHEMIST_CONFIG = {
   openAiModel: "gpt-4.1-mini",
   geminiApiKey: "",
   geminiApiKeyStorageName: "project-alchemist-gemini-key",
-  geminiModel: "gemini-1.5-flash"
+  geminiModel: "gemini-2.0-flash",
+  geminiModelFallbacks: ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-latest"]
 };
