@@ -177,6 +177,10 @@
         return await requestGeminiModel(idea, apiKey, model);
       } catch (error) {
         lastError = error;
+        if (isGeminiQuotaError(error)) {
+          showToast("Gemini quota вичерпана. Створюю проєкт через demo AI.");
+          return demoAnalyze(idea);
+        }
         if (!isGeminiModelNotFound(error)) break;
       }
     }
@@ -227,12 +231,19 @@
     return error?.status === 404 && /model|not found|not supported/i.test(error.details || error.message || "");
   }
 
+  function isGeminiQuotaError(error) {
+    return error?.status === 429 || /quota|rate limit|RESOURCE_EXHAUSTED/i.test(error.details || error.message || "");
+  }
+
   function formatGeminiError(status, model, text) {
     let message = text;
     try {
       message = JSON.parse(text)?.error?.message || text;
     } catch {
       message = text;
+    }
+    if (status === 429) {
+      return `Gemini quota вичерпана для моделі ${model}. Спробуйте пізніше або використайте інший ключ.`;
     }
     if (status === 400 || status === 403 || status === 404) {
       return `Gemini API ${status} для моделі ${model}: ${message}`;
@@ -476,9 +487,13 @@
 
       return { ...project, id: projectId, created_at: saved.created_at };
     } catch (error) {
-      console.warn("Supabase save failed, using local storage.", error);
-      if (isSupabaseTableMissing(error)) state.supabaseAvailable = false;
-      showToast("Supabase недоступний. Зберігаю локально.");
+      if (isSupabaseTableMissing(error)) {
+        state.supabaseAvailable = false;
+        showToast("Таблиці Supabase ще не створені. Зберігаю локально.");
+      } else {
+        console.warn("Supabase save failed, using local storage.", error);
+        showToast("Supabase недоступний. Зберігаю локально.");
+      }
       return null;
     } finally {
       state.isSaving = false;
@@ -520,10 +535,11 @@
       const rows = await response.json();
       state.projects = rows.map(fromProjectRow);
     } catch (error) {
-      console.warn(error);
       if (isSupabaseTableMissing(error)) {
         state.supabaseAvailable = false;
         showToast("Таблиці Supabase ще не створені. Працюю локально.");
+      } else {
+        console.warn(error);
       }
       state.projects = getLocalProjects();
     }
